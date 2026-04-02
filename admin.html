@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Nexus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body { background: #020205; }
+        
+        .admin-grid {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background: rgba(10, 10, 20, 0.8);
+            border-right: 1px solid var(--glass-border);
+            padding: 2rem;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .sidebar-menu { list-style: none; margin-top: 3rem; }
+        .sidebar-menu li { margin-bottom: 0.5rem; }
+        .sidebar-menu a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-family: 'Outfit';
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-radius: 12px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            color: white;
+            background: linear-gradient(90deg, rgba(112,0,255,0.2), transparent);
+            border-left: 3px solid var(--accent-cyan);
+            text-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, rgba(20,20,30,0.8), rgba(10,10,20,0.9));
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-value { font-family: 'Outfit'; font-size: 2.5rem; font-weight: 800; color: white; margin-bottom: 0.5rem; }
+        .stat-label { color: var(--text-muted); font-size: 1rem; }
+        
+        .table-container { background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 20px; overflow: hidden; }
+        .table { width: 100%; border-collapse: collapse; }
+        .table th, .table td { padding: 1.5rem; text-align: left; border-bottom: 1px solid var(--glass-border); }
+        .table th { background: rgba(0,0,0,0.3); color: var(--accent-cyan); font-family: 'Outfit'; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; }
+        .table tr:hover td { background: rgba(255,255,255,0.02); }
+
+        .badge { padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }
+        .badge.paid { background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
+        .badge.pending { background: rgba(255, 0, 122, 0.1); color: var(--accent-pink); border: 1px solid var(--accent-pink); }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal {
+            background: var(--bg-dark);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 600px;
+            padding: 2rem;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        }
+        .close-modal {
+            position: absolute; top: 1.5rem; right: 1.5rem;
+            background: transparent; border: none; color: white;
+            font-size: 1.5rem; cursor: pointer;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="admin-grid">
+        <aside class="sidebar">
+            <a href="index.html" class="nav-brand" style="font-size: 2rem; display: block; margin-bottom: 1rem;">NEXUS</a>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">COMMAND CENTER</p>
+            
+            <ul class="sidebar-menu">
+                <li><a class="nav-tab active" onclick="switchTheme('dashboard')">Dashboard</a></li>
+                <li><a class="nav-tab" onclick="switchTheme('products')">Inventory</a></li>
+                <li><a class="nav-tab" onclick="switchTheme('customers')">Customers</a></li>
+                <li><a href="index.html" style="margin-top: 3rem; border: 1px solid var(--glass-border); justify-content: center;">← Back to Shop</a></li>
+            </ul>
+        </aside>
+
+        <main style="padding: 3rem 4rem;">
+            
+            <!-- Dashboard Tab -->
+            <div id="tab-dashboard" class="tab-content active">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem;">
+                    <h1 style="font-family: 'Outfit'; font-size: 2.5rem;">Business Overview</h1>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statRev">$0.00</div>
+                        <div class="stat-label">Total Revenue</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statOrders">0</div>
+                        <div class="stat-label">Total Orders</div>
+                    </div>
+                </div>
+
+                <h2 style="font-family: 'Outfit'; font-size: 1.8rem; margin-bottom: 1.5rem;">Recent Orders</h2>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Date</th>
+                                <th>Total Amount</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTbody">
+                            <tr><td colspan="5" style="text-align:center;">Loading orders...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Products Tab -->
+            <div id="tab-products" class="tab-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem;">
+                    <h1 style="font-family: 'Outfit'; font-size: 2.5rem;">Inventory Control</h1>
+                    <button class="btn btn-primary" onclick="alert('Product addition modal coming soon!')">+ Add Product</button>
+                </div>
+                
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Stock</th>
+                                <th>Manage</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTbody">
+                            <tr><td colspan="5" style="text-align:center;">Loading inventory...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Customers Tab -->
+            <div id="tab-customers" class="tab-content">
+                <h1 style="font-family: 'Outfit'; font-size: 2.5rem; margin-bottom: 3rem;">Customer Directory</h1>
+                <div class="table-container" style="padding: 4rem; text-align: center; color: var(--text-muted)">
+                    User Auth module must be fully activated to fetch customers.<br>Setup Supabase Auth to enable this directory.
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modal Background -->
+    <div class="modal-overlay" id="orderModal">
+        <div class="modal">
+            <button class="close-modal" onclick="closeModal()">&times;</button>
+            <h2 id="modalTitle" style="font-family: 'Outfit'; margin-bottom: 1.5rem;">Order Details</h2>
+            
+            <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:1rem;">
+                    <span style="color:var(--text-muted)">Date:</span>
+                    <span id="modalDate" style="font-weight:bold;">--</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span style="color:var(--text-muted)">Transaction UUID:</span>
+                    <span id="modalId" style="font-family:monospace; color:var(--accent-cyan); font-size:0.9rem;">--</span>
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid var(--glass-border); padding-top: 1.5rem; display:flex; justify-content:space-between; font-size: 1.5rem; font-weight:800;">
+                <span>Total Paid:</span>
+                <span id="modalTotal" style="color:var(--accent-pink)">--</span>
+            </div>
+            
+            <button class="btn btn-outline" style="width: 100%; margin-top: 2rem;" onclick="closeModal()">Close Window</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script>
+        let cachedOrders = [];
+
+        // Tab Switching Logic
+        window.switchTheme = (tabName) => {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById('tab-' + tabName).classList.add('active');
+            event.target.classList.add('active');
+        };
+
+        // Modal Logic
+        window.viewOrder = (orderId) => {
+            const order = cachedOrders.find(o => o.id === orderId);
+            if(order) {
+                document.getElementById('modalTitle').textContent = `Order #${order.id.slice(-6).toUpperCase()}`;
+                document.getElementById('modalId').textContent = order.id;
+                document.getElementById('modalDate').textContent = new Date(order.created_at).toLocaleString();
+                document.getElementById('modalTotal').textContent = `$${order.total_amount.toFixed(2)}`;
+                
+                document.getElementById('orderModal').style.display = 'flex';
+            }
+        };
+
+        window.closeModal = () => {
+            document.getElementById('orderModal').style.display = 'none';
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Load Orders
+            let { data: orders, error } = await window.supabase.from('orders').select('*').order('created_at', { ascending: false });
+            
+            // Mock fallback if DB has no orders or fails
+            if (error || !orders || orders.length === 0) {
+                orders = [
+                    { id: 'bb2f1-6h8j', created_at: new Date().toISOString(), total_amount: 899.99, status: 'paid' },
+                    { id: '1a9k3-4m2n', created_at: new Date(Date.now() - 50000000).toISOString(), total_amount: 349.00, status: 'paid' },
+                ];
+            }
+            
+            cachedOrders = orders;
+
+            const totalRev = orders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
+            document.getElementById('statRev').textContent = `$${totalRev.toFixed(2)}`;
+            document.getElementById('statOrders').textContent = orders.length;
+
+            document.getElementById('ordersTbody').innerHTML = orders.map(order => `
+                <tr>
+                    <td style="font-family: monospace; color: var(--text-muted);">#${order.id.slice(-6).toUpperCase()}</td>
+                    <td>${new Date(order.created_at).toLocaleDateString()}</td>
+                    <td style="font-weight: 700; color: white;">$${typeof order.total_amount === 'number' ? order.total_amount.toFixed(2) : Number(order.total_amount).toFixed(2)}</td>
+                    <td><span class="badge ${order.status === 'paid' ? 'paid' : 'pending'}">${(order.status||'paid').toUpperCase()}</span></td>
+                    <td><button class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.85rem; border-radius: 8px;" onclick="viewOrder('${order.id}')">View</button></td>
+                </tr>
+            `).join('');
+
+            // Load Inventory for Products Tab
+            let { data: products } = await window.supabase.from('products').select('*');
+            if (products) {
+                document.getElementById('productsTbody').innerHTML = products.map(p => `
+                    <tr>
+                        <td style="font-weight:600;">${p.name}</td>
+                        <td style="color:var(--accent-cyan);">${p.category}</td>
+                        <td>$${p.price.toFixed(2)}</td>
+                        <td>${p.stock} units</td>
+                        <td><button class="btn btn-outline" style="padding: 0.3rem 0.8rem; font-size: 0.8rem;">Edit</button></td>
+                    </tr>
+                `).join('');
+            }
+        });
+    </script>
+</body>
+</html>
